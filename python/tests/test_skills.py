@@ -20,17 +20,26 @@ class TestSkillsStructure:
     def test_skills_exposes_all_sub_skills(self, diff, osu_map):
         skills = diff.skills(osu_map)
 
-        assert skills.flow is not None
         assert skills.jump is not None
+        assert skills.flow is not None
         assert skills.raw_aim is not None
         assert skills.precision is not None
+        assert skills.stamina is not None
         assert skills.rhythm_complexity is not None
+
+    def test_skills_holds_ppplus_skills_only(self, diff, osu_map):
+        """The native `Aim` and `Speed` skills are not part of `Skills`."""
+        skills = diff.skills(osu_map)
+
+        assert not hasattr(skills, "aim")
+        assert not hasattr(skills, "speed")
 
     def test_repr(self, diff, osu_map):
         skills = diff.skills(osu_map)
         assert "Skills" in repr(skills)
         assert "FlowSkill" in repr(skills.flow)
         assert "JumpSkill" in repr(skills.jump)
+        assert "StaminaSkill" in repr(skills.stamina)
 
 
 class TestConsistencyWithAttributes:
@@ -43,40 +52,69 @@ class TestConsistencyWithAttributes:
         attrs = diff.calculate(osu_map)
         skills = diff.skills(osu_map)
 
-        assert skills.aim == pytest.approx(attrs.aim)
-        assert skills.flow.stars == pytest.approx(attrs.flow)
         assert skills.jump.stars == pytest.approx(attrs.jump)
+        assert skills.flow.stars == pytest.approx(attrs.flow)
         assert skills.precision.stars == pytest.approx(attrs.precision)
+        assert skills.stamina.stars == pytest.approx(attrs.stamina)
         assert skills.rhythm_complexity.stars == pytest.approx(attrs.accuracy)
 
     @pytest.mark.parametrize("mods", [None, "HDHR"])
     def test_precision_is_the_aim_remainder(self, osu_map, mods):
         """`precision` is derived from `aim - raw_aim` on difficulty values."""
-        skills = rosu.Difficulty(mods=mods).skills(osu_map)
+        diff = rosu.Difficulty(mods=mods)
 
-        aim_dv = difficulty_value(skills.aim)
+        attrs = diff.calculate(osu_map)
+        skills = diff.skills(osu_map)
+
+        aim_dv = difficulty_value(attrs.aim)
         raw_dv = difficulty_value(skills.raw_aim.stars)
         precision_dv = difficulty_value(skills.precision.stars)
 
         assert precision_dv == pytest.approx(max(0.0, aim_dv - raw_dv))
 
-    def test_difficult_strain_counts_match_for_flow(self, hdhr_diff, osu_map):
+    def test_difficult_strain_counts_match(self, hdhr_diff, osu_map):
         attrs = hdhr_diff.calculate(osu_map)
         skills = hdhr_diff.skills(osu_map)
 
         assert skills.flow.difficult_strain_count == pytest.approx(
             attrs.flow_aim_difficult_strain_count
         )
+        assert skills.stamina.difficult_strain_count == pytest.approx(
+            attrs.stamina_difficult_strain_count
+        )
 
     def test_individual_getters_match_skills(self, hdhr_diff, osu_map):
         skills = hdhr_diff.skills(osu_map)
 
-        assert hdhr_diff.flow(osu_map).stars == pytest.approx(skills.flow.stars)
         assert hdhr_diff.jump(osu_map).stars == pytest.approx(skills.jump.stars)
+        assert hdhr_diff.flow(osu_map).stars == pytest.approx(skills.flow.stars)
         assert hdhr_diff.raw_aim(osu_map).stars == pytest.approx(skills.raw_aim.stars)
+        assert hdhr_diff.stamina(osu_map).stars == pytest.approx(skills.stamina.stars)
         assert hdhr_diff.rhythm_complexity(osu_map).stars == pytest.approx(
             skills.rhythm_complexity.stars
         )
+
+
+class TestJumpSkill:
+    def test_values_are_sane(self, hdhr_diff, osu_map):
+        jump = hdhr_diff.jump(osu_map)
+
+        assert jump.stars > 0
+        assert jump.difficulty_value > 0
+        assert jump.strain_sum > 0
+
+    def test_stars_derive_from_the_difficulty_value(self, hdhr_diff, osu_map):
+        jump = hdhr_diff.jump(osu_map)
+
+        assert jump.stars == pytest.approx(
+            jump.difficulty_value**0.5 * DIFFICULTY_MULTIPLIER
+        )
+
+    def test_higher_clock_rate_raises_jump(self, osu_map):
+        normal = rosu.Difficulty().jump(osu_map).stars
+        faster = rosu.Difficulty(clock_rate=1.5).jump(osu_map).stars
+
+        assert faster > normal
 
 
 class TestFlowSkill:
@@ -108,28 +146,6 @@ class TestFlowSkill:
         assert diff.flow(osu_map).stars > 0
 
 
-class TestJumpSkill:
-    def test_values_are_sane(self, hdhr_diff, osu_map):
-        jump = hdhr_diff.jump(osu_map)
-
-        assert jump.stars > 0
-        assert jump.difficulty_value > 0
-        assert jump.strain_sum > 0
-
-    def test_stars_derive_from_the_difficulty_value(self, hdhr_diff, osu_map):
-        jump = hdhr_diff.jump(osu_map)
-
-        assert jump.stars == pytest.approx(
-            jump.difficulty_value**0.5 * DIFFICULTY_MULTIPLIER
-        )
-
-    def test_higher_clock_rate_raises_jump(self, osu_map):
-        normal = rosu.Difficulty().jump(osu_map).stars
-        faster = rosu.Difficulty(clock_rate=1.5).jump(osu_map).stars
-
-        assert faster > normal
-
-
 class TestRawAimSkill:
     def test_values_are_sane(self, hdhr_diff, osu_map):
         raw = hdhr_diff.raw_aim(osu_map)
@@ -142,6 +158,28 @@ class TestRawAimSkill:
 
         assert attrs.aim - attrs.precision <= attrs.aim
         assert hdhr_diff.raw_aim(osu_map).stars < attrs.aim
+
+
+class TestStaminaSkill:
+    def test_values_are_sane(self, hdhr_diff, osu_map):
+        stamina = hdhr_diff.stamina(osu_map)
+
+        assert stamina.stars > 0
+        assert stamina.difficulty_value > 0
+        assert stamina.strain_sum > 0
+
+    def test_stars_derive_from_the_difficulty_value(self, hdhr_diff, osu_map):
+        stamina = hdhr_diff.stamina(osu_map)
+
+        assert stamina.stars == pytest.approx(
+            stamina.difficulty_value**0.5 * DIFFICULTY_MULTIPLIER
+        )
+
+    def test_higher_clock_rate_raises_stamina(self, osu_map):
+        normal = rosu.Difficulty().stamina(osu_map).stars
+        faster = rosu.Difficulty(clock_rate=1.5).stamina(osu_map).stars
+
+        assert faster > normal
 
 
 class TestRhythmComplexity:

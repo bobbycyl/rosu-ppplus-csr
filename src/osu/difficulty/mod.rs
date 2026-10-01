@@ -47,7 +47,8 @@ pub fn difficulty(
 /// Calculate the ppplus-csr skill values of an osu!standard map.
 ///
 /// On top of the regular difficulty attributes this returns the separated
-/// `FlowAim` and `JumpAim` as well as the `RhythmComplexity` values.
+/// `JumpAim` and `FlowAim`, the `Stamina` skill, and the `RhythmComplexity`
+/// values.
 pub fn skill_output(
     difficulty: &Difficulty,
     map: &Beatmap,

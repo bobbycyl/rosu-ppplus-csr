@@ -27,15 +27,17 @@ def main(path: str) -> None:
 
         print(f"[{mods}] {attrs.stars:.3f}*")
 
-        # FlowAim and JumpAim are separate skills in ppplus-csr.
-        print(f"  FlowAim                  {attrs.flow:7.3f}")
-        print(f"  JumpAim                  {attrs.jump:7.3f}")
-        print(f"  Precision                {attrs.precision:7.3f}")
-        print(f"  Accuracy                 {attrs.accuracy:7.3f}")
+        # JumpAim and FlowAim are separate skills in ppplus-csr.
+        print(f"  JumpAim                  {attrs.jump:7.3f}  {skills.jump.stars:.3f}*")
+        print(f"  FlowAim                  {attrs.flow:7.3f}  {skills.flow.stars:.3f}*")
+        print(f"  Precision                {attrs.precision:7.3f}  {skills.precision.stars:.3f}*")
+        print(f"  Stamina                  {attrs.stamina:7.3f}  {skills.stamina.stars:.3f}*")
+        print(
+            f"  RhythmComplexity         {attrs.accuracy:7.3f}"
+            f"  {skills.rhythm_complexity.stars:.3f}*"
+        )
 
-        print("    RhythmComplexity")
         rc = skills.rhythm_complexity
-        print(f"    stars {rc.stars:.3f}*")
         print(
             f"    hit circles {rc.hit_circle_count}"
             f" | accuracy objects {rc.accuracy_object_count}"

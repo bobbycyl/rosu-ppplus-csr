@@ -2,23 +2,24 @@
 //!
 //! These wrap the values ppplus-csr computes on top of upstream `rosu-pp`:
 //!
-//! - [`PyFlowSkill`] / [`PyJumpSkill`] — `FlowAim` and `JumpAim`
+//! - [`PyJumpSkill`] / [`PyFlowSkill`] — `JumpAim` and `FlowAim`
 //! - [`PyRawAimSkill`] / [`PyPrecisionSkill`] — `RawAim` and the `Precision`
 //!   derived from `Aim - RawAim`
+//! - [`PyStaminaSkill`] — `Stamina`
 //! - [`PyRhythmComplexity`] — `RhythmComplexity`
 //! - [`PySkills`] — all of the above in one object
 
-use rosu_pp::osu::{AimSkillOutput, OsuSkillsOutput, RhythmComplexityOutput};
+use rosu_pp::osu::{AimSkillOutput, OsuSkillsOutput, RhythmComplexityOutput, StaminaSkillOutput};
 
 define_class! {
-    #[pyclass(name = "FlowSkill", frozen, skip_from_py_object)]
-    /// The `FlowAim` skill.
+    #[pyclass(name = "JumpSkill", frozen, skip_from_py_object)]
+    /// The `JumpAim` skill.
     ///
-    /// Describes the strain of continuously moving the cursor along a path
-    /// without stopping, e.g. streams and low-spacing bursts.
+    /// Describes the strain of moving the cursor between distinct circles,
+    /// e.g. spaced patterns.
     #[derive(Clone, Default, PartialEq)]
-    pub struct PyFlowSkill {
-        /// Star rating of `FlowAim`.
+    pub struct PyJumpSkill {
+        /// Star rating of `JumpAim`.
         pub stars: f64!,
         /// The un-square-rooted difficulty value.
         pub difficulty_value: f64!,
@@ -34,14 +35,14 @@ define_class! {
 }
 
 define_class! {
-    #[pyclass(name = "JumpSkill", frozen, skip_from_py_object)]
-    /// The `JumpAim` skill.
+    #[pyclass(name = "FlowSkill", frozen, skip_from_py_object)]
+    /// The `FlowAim` skill.
     ///
-    /// Describes the strain of moving the cursor between distinct circles,
-    /// e.g. spaced patterns.
+    /// Describes the strain of continuously moving the cursor along a path
+    /// without stopping, e.g. streams and low-spacing bursts.
     #[derive(Clone, Default, PartialEq)]
-    pub struct PyJumpSkill {
-        /// Star rating of `JumpAim`.
+    pub struct PyFlowSkill {
+        /// Star rating of `FlowAim`.
         pub stars: f64!,
         /// The un-square-rooted difficulty value.
         pub difficulty_value: f64!,
@@ -88,6 +89,23 @@ define_class! {
 }
 
 define_class! {
+    #[pyclass(name = "StaminaSkill", frozen, skip_from_py_object)]
+    /// The `Stamina` skill, i.e. the ppplus-csr strain of sustaining fast
+    /// tapping that was split off the native speed skill.
+    #[derive(Clone, Default, PartialEq)]
+    pub struct PyStaminaSkill {
+        /// Star rating of `Stamina`.
+        pub stars: f64!,
+        /// The un-square-rooted difficulty value.
+        pub difficulty_value: f64!,
+        /// Weighted amount of strains considered difficult.
+        pub difficult_strain_count: f64!,
+        /// Sum of all accumulated object strains.
+        pub strain_sum: f64!,
+    }
+}
+
+define_class! {
     #[pyclass(name = "RhythmComplexity", frozen, skip_from_py_object)]
     /// The `RhythmComplexity` skill.
     ///
@@ -118,28 +136,27 @@ define_class! {
 define_class! {
     #[pyclass(name = "Skills", frozen, skip_from_py_object)]
     /// All ppplus-csr skill values of an osu!standard difficulty calculation.
+    ///
+    /// The native `Aim` and `Speed` skills are not part of it; their ratings
+    /// are available through `DifficultyAttributes`.
     #[derive(Clone, Default, PartialEq)]
     pub struct PySkills {
-        /// The overall `Aim`.
-        ///
-        /// This is the rating that the skill produces on its own.
-        /// `DifficultyAttributes.aim` is the same value except for TD, RX, and
-        /// AP, where the attribute is adjusted (or zeroed) afterwards.
-        pub aim: f64!,
-        /// The `Precision` skill.
-        pub precision: PyPrecisionSkill!,
-        /// The `FlowAim` skill.
-        pub flow: PyFlowSkill!,
         /// The `JumpAim` skill.
         pub jump: PyJumpSkill!,
+        /// The `FlowAim` skill.
+        pub flow: PyFlowSkill!,
         /// The `RawAim` skill.
         pub raw_aim: PyRawAimSkill!,
+        /// The `Precision` skill.
+        pub precision: PyPrecisionSkill!,
+        /// The `Stamina` skill.
+        pub stamina: PyStaminaSkill!,
         /// The `RhythmComplexity` skill.
         pub rhythm_complexity: PyRhythmComplexity!,
     }
 }
 
-impl From<AimSkillOutput> for PyFlowSkill {
+impl From<AimSkillOutput> for PyJumpSkill {
     fn from(out: AimSkillOutput) -> Self {
         Self {
             stars: out.stars,
@@ -152,7 +169,7 @@ impl From<AimSkillOutput> for PyFlowSkill {
     }
 }
 
-impl From<AimSkillOutput> for PyJumpSkill {
+impl From<AimSkillOutput> for PyFlowSkill {
     fn from(out: AimSkillOutput) -> Self {
         Self {
             stars: out.stars,
@@ -178,6 +195,17 @@ impl From<AimSkillOutput> for PyRawAimSkill {
     }
 }
 
+impl From<StaminaSkillOutput> for PyStaminaSkill {
+    fn from(out: StaminaSkillOutput) -> Self {
+        Self {
+            stars: out.stars,
+            difficulty_value: out.difficulty_value,
+            difficult_strain_count: out.difficult_strain_count,
+            strain_sum: out.strain_sum,
+        }
+    }
+}
+
 impl From<RhythmComplexityOutput> for PyRhythmComplexity {
     fn from(out: RhythmComplexityOutput) -> Self {
         Self {
@@ -197,13 +225,13 @@ impl From<RhythmComplexityOutput> for PyRhythmComplexity {
 impl From<OsuSkillsOutput> for PySkills {
     fn from(out: OsuSkillsOutput) -> Self {
         Self {
-            aim: out.aim.stars,
+            jump: out.jump_aim.into(),
+            flow: out.flow_aim.into(),
+            raw_aim: out.raw_aim.into(),
             precision: PyPrecisionSkill {
                 stars: out.precision,
             },
-            flow: out.flow_aim.into(),
-            jump: out.jump_aim.into(),
-            raw_aim: out.raw_aim.into(),
+            stamina: out.stamina.into(),
             rhythm_complexity: out.rhythm_complexity.into(),
         }
     }

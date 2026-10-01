@@ -13,7 +13,10 @@ pub use self::{
     difficulty::{
         gradual::OsuGradualDifficulty,
         skill_output,
-        skills::{aim::AimSkillOutput, rhythm_complexity::RhythmComplexityOutput, OsuSkillsOutput},
+        skills::{
+            aim::AimSkillOutput, rhythm_complexity::RhythmComplexityOutput,
+            stamina::StaminaSkillOutput, OsuSkillsOutput,
+        },
     },
     performance::{gradual::OsuGradualPerformance, OsuPerformance},
     score_state::{OsuScoreOrigin, OsuScoreState},

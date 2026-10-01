@@ -5,12 +5,13 @@ adds the ppplus-csr calculation modules.
 
 On top of the regular difficulty and performance attributes this exposes:
 
-- `FlowAim` — aim strain on continuous cursor paths, e.g. streams
 - `JumpAim` — aim strain between distinct circles, e.g. spaced patterns
+- `FlowAim` — aim strain on continuous cursor paths, e.g. streams
 - `RawAim` — `FlowAim` plus `JumpAim` without the bonus multipliers, and the
   `Precision` derived from it
-- `RhythmComplexity` — rhythm-based difficulty, reported as the accuracy
-  rating
+- `Stamina` — tapping strain while sustaining fast patterns
+- `RhythmComplexity` — rhythm-based difficulty; its `stars` value equals
+  `DifficultyAttributes.accuracy`
 
 ## Installation
 
@@ -85,19 +86,22 @@ print(attrs.stars, attrs.aim, attrs.speed)
 
 # All ppplus-csr skills in a single calculation
 skills = diff.skills(map)
-print(skills.flow.stars)
 print(skills.jump.stars)
-print(skills.rhythm_complexity.stars)
+print(skills.flow.stars)
+print(skills.raw_aim.stars)
 print(skills.precision.stars)
+print(skills.stamina.stars)
+print(skills.rhythm_complexity.stars)
 ```
 
 Individual skills are also reachable through dedicated getters. Each of them
 runs its own calculation, so prefer `skills()` when you need more than one.
 
 ```python
-flow = diff.flow(map)
 jump = diff.jump(map)
+flow = diff.flow(map)
 raw = diff.raw_aim(map)
+stamina = diff.stamina(map)
 rhythm = diff.rhythm_complexity(map)
 ```
 
@@ -115,7 +119,7 @@ rosu.Difficulty(mods=["HD", {"acronym": "DT", "settings": {"speed_change": 1.1}}
 
 ```python
 perf = diff.performance(map, accuracy=98.5, combo=1234, misses=1)
-print(perf.pp, perf.pp_flow_aim, perf.pp_jump_aim, perf.pp_acc)
+print(perf.pp, perf.pp_jump_aim, perf.pp_flow_aim, perf.pp_stamina, perf.pp_acc)
 
 # Reuse previously calculated difficulty attributes to skip the
 # difficulty calculation entirely
@@ -131,7 +135,8 @@ perf = diff.performance(attrs, accuracy=99.2)
 | `DifficultyAttributes` | Result of `Difficulty.calculate` |
 | `PerformanceAttributes` | Result of `Difficulty.performance` |
 | `Skills` | All ppplus-csr skills of one calculation |
-| `FlowSkill` / `JumpSkill` / `RawAimSkill` / `PrecisionSkill` | The `FlowAim`, `JumpAim`, `RawAim`, and `Precision` skills |
+| `JumpSkill` / `FlowSkill` / `RawAimSkill` / `PrecisionSkill` | The `JumpAim`, `FlowAim`, `RawAim`, and `Precision` skills |
+| `StaminaSkill` | The `Stamina` skill |
 | `RhythmComplexity` | The `RhythmComplexity` skill |
 | `GameMode`, `HitResultPriority` | Enums |
 | `ParseError`, `ArgsError`, `ConvertError` | Exceptions |

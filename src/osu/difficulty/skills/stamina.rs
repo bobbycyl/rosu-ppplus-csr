@@ -21,9 +21,37 @@ define_skill! {
     }
 }
 
+/// Values of [`Stamina`] as used by ppplus-csr bindings and tooling.
+#[derive(Copy, Clone, Debug, Default, PartialEq)]
+pub struct StaminaSkillOutput {
+    /// Star rating of the skill.
+    pub stars: f64,
+    /// The un-square-rooted difficulty value.
+    pub difficulty_value: f64,
+    /// Weighted amount of strains that are considered difficult.
+    pub difficult_strain_count: f64,
+    /// Sum of all accumulated object strains.
+    pub strain_sum: f64,
+}
+
 impl Stamina {
     const SKILL_MULTIPLIER: f64 = 2600.0 * 0.3;
     const STRAIN_DECAY_BASE: f64 = 0.45;
+
+    /// Collect the values of this skill that are relevant for ppplus-csr.
+    ///
+    /// This is a convenience for bindings and tooling; it does not influence
+    /// the regular difficulty calculation.
+    pub fn skill_output(&self) -> StaminaSkillOutput {
+        let difficulty_value = self.cloned_difficulty_value();
+
+        StaminaSkillOutput {
+            stars: difficulty_value.sqrt() * super::super::DIFFICULTY_MULTIPLIER,
+            difficulty_value,
+            difficult_strain_count: self.count_top_weighted_strains(difficulty_value),
+            strain_sum: self.strain_skill_object_strains.iter().copied().sum(),
+        }
+    }
 
     fn calculate_initial_strain(
         &mut self,

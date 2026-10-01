@@ -143,8 +143,9 @@ This fork ships its own Python bindings in [`python/`](./python/README.md).
 On top of the regular difficulty and performance attributes they expose the
 ppplus-csr additions:
 
-- `FlowAim` and `JumpAim` as separate aim skills
+- `JumpAim` and `FlowAim` as separate aim skills
 - `RawAim` plus the `Precision` derived from `Aim - RawAim`
+- `Stamina`, split off the native speed skill
 - `RhythmComplexity`
 
 ```sh
@@ -160,23 +161,30 @@ map = rosu.Beatmap(path="map.osu")
 diff = rosu.Difficulty(mods="HDHR")
 
 skills = diff.skills(map)
-print(skills.flow.stars, skills.jump.stars, skills.rhythm_complexity.stars)
+print(
+    skills.jump.stars,
+    skills.flow.stars,
+    skills.stamina.stars,
+    skills.rhythm_complexity.stars,
+)
 ```
 
 ### Exposing ppplus values from Rust
 
 The ppplus-csr skill values are also reachable from plain Rust through
 `rosu_pp::osu::skill_output`, which returns an `OsuSkillsOutput` with the
-`Aim`, `FlowAim`, `JumpAim`, and `RawAim` skills as well as
-`RhythmComplexity`. This is purely additive and does not change the regular
-difficulty attributes.
+`JumpAim`, `FlowAim`, and `RawAim` skills as well as the derived `Precision`,
+`Stamina`, and `RhythmComplexity`. The native `Aim` and `Speed` skills are not
+part of it. This is purely additive and does not change the regular difficulty
+attributes.
 
 ```rust
 let difficulty = rosu_pp::Difficulty::new().mods(8 + 16); // HDHR
 let skills = rosu_pp::osu::skill_output(&difficulty, &map).unwrap();
 
-println!("flow: {}", skills.flow_aim.stars);
 println!("jump: {}", skills.jump_aim.stars);
+println!("flow: {}", skills.flow_aim.stars);
+println!("stamina: {}", skills.stamina.stars);
 println!("accuracy: {}", skills.rhythm_complexity.stars);
 ```
 

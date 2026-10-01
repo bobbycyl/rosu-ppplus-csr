@@ -15,7 +15,9 @@ use crate::{
     beatmap::PyBeatmap,
     error::{ArgsError, ConvertErrorExt},
     mods::PyGameMods,
-    output::{PyFlowSkill, PyJumpSkill, PyRawAimSkill, PyRhythmComplexity, PySkills},
+    output::{
+        PyFlowSkill, PyJumpSkill, PyRawAimSkill, PyRhythmComplexity, PySkills, PyStaminaSkill,
+    },
 };
 
 /// Difficulty calculator for osu!standard.
@@ -32,12 +34,12 @@ use crate::{
 ///
 /// attrs = diff.calculate(map)      # regular attributes
 /// skills = diff.skills(map)        # ppplus-csr skills, all in one go
-/// print(skills.flow.stars, skills.jump.stars, skills.rhythm_complexity.stars)
+/// print(skills.jump.stars, skills.flow.stars, skills.rhythm_complexity.stars)
 /// ```
 ///
-/// The dedicated getters (`flow`, `jump`, `raw_aim`, `rhythm_complexity`)
-/// each run their own calculation. Prefer [`skills`](#method.skills) when you
-/// need more than one of them.
+/// The dedicated getters (`jump`, `flow`, `raw_aim`, `stamina`,
+/// `rhythm_complexity`) each run their own calculation. Prefer
+/// [`skills`](#method.skills) when you need more than one of them.
 ///
 /// The constructor accepts the following keyword arguments:
 ///
@@ -135,8 +137,8 @@ impl PyDifficulty {
 
     /// Calculate every ppplus-csr skill value of an osu!standard map.
     ///
-    /// Returns a `Skills` object holding the `FlowAim`, `JumpAim`, `RawAim`,
-    /// `Precision`, and `RhythmComplexity` values.
+    /// Returns a `Skills` object holding the `JumpAim`, `FlowAim`, `RawAim`,
+    /// `Precision`, `Stamina`, and `RhythmComplexity` values.
     fn skills(&self, map: &PyBeatmap, py: Python<'_>) -> PyResult<PySkills> {
         let difficulty = self.build_difficulty(map, py)?;
 
@@ -145,19 +147,24 @@ impl PyDifficulty {
         Ok(out.into())
     }
 
-    /// Calculate `FlowAim`.
-    fn flow(&self, map: &PyBeatmap, py: Python<'_>) -> PyResult<PyFlowSkill> {
-        Ok(self.skills(map, py)?.flow)
-    }
-
     /// Calculate `JumpAim`.
     fn jump(&self, map: &PyBeatmap, py: Python<'_>) -> PyResult<PyJumpSkill> {
         Ok(self.skills(map, py)?.jump)
     }
 
+    /// Calculate `FlowAim`.
+    fn flow(&self, map: &PyBeatmap, py: Python<'_>) -> PyResult<PyFlowSkill> {
+        Ok(self.skills(map, py)?.flow)
+    }
+
     /// Calculate `RawAim`.
     fn raw_aim(&self, map: &PyBeatmap, py: Python<'_>) -> PyResult<PyRawAimSkill> {
         Ok(self.skills(map, py)?.raw_aim)
+    }
+
+    /// Calculate `Stamina`.
+    fn stamina(&self, map: &PyBeatmap, py: Python<'_>) -> PyResult<PyStaminaSkill> {
+        Ok(self.skills(map, py)?.stamina)
     }
 
     /// Calculate `RhythmComplexity`.

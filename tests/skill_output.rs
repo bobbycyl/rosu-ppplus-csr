@@ -17,10 +17,10 @@ fn matches_difficulty_attributes() {
         .unwrap();
     let skills = skill_output(&difficulty, &map).unwrap();
 
-    assert_eq!(skills.aim.stars, attrs.aim);
-    assert_eq!(skills.flow_aim.stars, attrs.flow);
     assert_eq!(skills.jump_aim.stars, attrs.jump);
+    assert_eq!(skills.flow_aim.stars, attrs.flow);
     assert_eq!(skills.precision, attrs.precision);
+    assert_eq!(skills.stamina.stars, attrs.stamina);
     assert_eq!(skills.rhythm_complexity.stars, attrs.accuracy);
 }
 
@@ -31,11 +31,14 @@ fn precision_splits_the_aim_value() {
     let map = Beatmap::from_path(OSU).unwrap();
     let difficulty = Difficulty::new().mods(8 + 16); // HDHR
 
+    let attrs = difficulty
+        .calculate_for_mode::<rosu_pp::osu::Osu>(&map)
+        .unwrap();
     let skills = skill_output(&difficulty, &map).unwrap();
 
     const MULTIPLIER: f64 = 0.0675;
 
-    let aim_dv = (skills.aim.stars / MULTIPLIER).powi(2);
+    let aim_dv = (attrs.aim / MULTIPLIER).powi(2);
     let raw_dv = (skills.raw_aim.stars / MULTIPLIER).powi(2);
     let precision_dv = (skills.precision / MULTIPLIER).powi(2);
     let expected = (aim_dv - raw_dv).max(0.0);
@@ -134,9 +137,8 @@ fn difficult_strain_counts_are_plausible() {
     let skills = skill_output(&Difficulty::new().mods(8 + 16), &map).unwrap();
 
     for (name, skill) in [
-        ("aim", skills.aim),
-        ("flow", skills.flow_aim),
         ("jump", skills.jump_aim),
+        ("flow", skills.flow_aim),
         ("raw", skills.raw_aim),
     ] {
         assert!(skill.difficult_strain_count > 0.0, "{name}");
@@ -144,6 +146,9 @@ fn difficult_strain_counts_are_plausible() {
         assert!(skill.strain_sum > 0.0, "{name}");
         assert!(skill.slider_strain_sum >= 0.0, "{name}");
     }
+
+    assert!(skills.stamina.difficult_strain_count > 0.0, "stamina");
+    assert!(skills.stamina.strain_sum > 0.0, "stamina");
 }
 
 /// Higher clock rates must increase the flow and jump skills.

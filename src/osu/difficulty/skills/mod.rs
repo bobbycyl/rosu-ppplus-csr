@@ -31,27 +31,25 @@ pub struct OsuSkills {
 
 /// The ppplus-csr skill values of an osu!standard difficulty calculation.
 ///
-/// This bundles the values that ppplus-csr adds on top of upstream `rosu-pp`,
-/// i.e. the separated `FlowAim` and `JumpAim` as well as `RhythmComplexity`.
+/// This bundles the values that ppplus-csr adds on top of upstream `rosu-pp`:
+/// the separated `JumpAim` and `FlowAim`, the `Stamina` skill that was split
+/// off the `Speed` skill, `RhythmComplexity`, and the `Precision` rating that
+/// is derived from `Aim - RawAim`. The native `Aim` and `Speed` skills are not
+/// part of it.
+///
 /// It is mainly intended for bindings and tooling.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct OsuSkillsOutput {
-    /// The overall `Aim`.
-    ///
-    /// Unlike [`OsuDifficultyAttributes::aim`], this value is not adjusted by
-    /// the TD, RX, or AP mods; its `stars` field is the rating the skill
-    /// produces on its own.
-    ///
-    /// [`OsuDifficultyAttributes::aim`]: crate::osu::OsuDifficultyAttributes::aim
-    pub aim: aim::AimSkillOutput,
-    /// The `FlowAim` skill.
-    pub flow_aim: aim::AimSkillOutput,
     /// The `JumpAim` skill.
     pub jump_aim: aim::AimSkillOutput,
+    /// The `FlowAim` skill.
+    pub flow_aim: aim::AimSkillOutput,
     /// The `RawAim` skill.
     pub raw_aim: aim::AimSkillOutput,
     /// The `Precision` rating, derived from `Aim - RawAim`.
     pub precision: f64,
+    /// The `Stamina` skill.
+    pub stamina: stamina::StaminaSkillOutput,
     /// The `RhythmComplexity` skill.
     pub rhythm_complexity: rhythm_complexity::RhythmComplexityOutput,
 }
@@ -69,11 +67,11 @@ impl OsuSkills {
             * crate::osu::difficulty::DIFFICULTY_MULTIPLIER;
 
         OsuSkillsOutput {
-            aim,
-            flow_aim: self.flow_aim.skill_output(),
             jump_aim: self.jump_aim.skill_output(),
+            flow_aim: self.flow_aim.skill_output(),
             raw_aim,
             precision,
+            stamina: self.stamina.skill_output(),
             rhythm_complexity: self.rhythm_complexity.skill_output(),
         }
     }

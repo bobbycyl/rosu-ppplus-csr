@@ -2,8 +2,8 @@
 
 ``rosu-ppplus-csr`` is a fork of ``rosu-pp`` that adds the ppplus-csr
 calculation modules. On top of the regular difficulty and performance
-attributes this module exposes the separated ``FlowAim`` / ``JumpAim``
-skills and ``RhythmComplexity``.
+attributes this module exposes the separated ``JumpAim`` / ``FlowAim``
+skills, ``Stamina``, and ``RhythmComplexity``.
 """
 
 from typing import Any, List, Literal, Optional, Union, overload
@@ -107,16 +107,16 @@ class Beatmap:
 # ppplus-csr skill outputs
 # ---------------------------------------------------------------------------
 
-class FlowSkill:
-    """The ``FlowAim`` skill.
+class JumpSkill:
+    """The ``JumpAim`` skill.
 
-    Describes the strain of continuously moving the cursor along a path
-    without stopping, e.g. streams and low-spacing bursts.
+    Describes the strain of moving the cursor between distinct circles, e.g.
+    spaced patterns.
     """
 
     @property
     def stars(self) -> float:
-        """Star rating of ``FlowAim``."""
+        """Star rating of ``JumpAim``."""
     @property
     def difficulty_value(self) -> float:
         """The un-square-rooted difficulty value."""
@@ -133,16 +133,16 @@ class FlowSkill:
     def slider_strain_sum(self) -> float:
         """Sum of all accumulated slider strains."""
 
-class JumpSkill:
-    """The ``JumpAim`` skill.
+class FlowSkill:
+    """The ``FlowAim`` skill.
 
-    Describes the strain of moving the cursor between distinct circles, e.g.
-    spaced patterns.
+    Describes the strain of continuously moving the cursor along a path
+    without stopping, e.g. streams and low-spacing bursts.
     """
 
     @property
     def stars(self) -> float:
-        """Star rating of ``JumpAim``."""
+        """Star rating of ``FlowAim``."""
     @property
     def difficulty_value(self) -> float:
         """The un-square-rooted difficulty value."""
@@ -192,6 +192,26 @@ class PrecisionSkill:
     def stars(self) -> float:
         """Star rating of ``Precision``."""
 
+class StaminaSkill:
+    """The ``Stamina`` skill.
+
+    Describes the ppplus-csr strain of sustaining fast tapping, split off the
+    native speed skill.
+    """
+
+    @property
+    def stars(self) -> float:
+        """Star rating of ``Stamina``."""
+    @property
+    def difficulty_value(self) -> float:
+        """The un-square-rooted difficulty value."""
+    @property
+    def difficult_strain_count(self) -> float:
+        """Weighted amount of strains considered difficult."""
+    @property
+    def strain_sum(self) -> float:
+        """Sum of all accumulated object strains."""
+
 class RhythmComplexity:
     """The ``RhythmComplexity`` skill.
 
@@ -227,28 +247,27 @@ class RhythmComplexity:
         """Whether the map was parsed with slider accuracy."""
 
 class Skills:
-    """All ppplus-csr skill values of one difficulty calculation."""
+    """All ppplus-csr skill values of one difficulty calculation.
 
-    @property
-    def aim(self) -> float:
-        """The overall ``Aim``.
+    The native ``Aim`` and ``Speed`` skills are not part of it; their ratings
+    are available through ``DifficultyAttributes``.
+    """
 
-        This is the rating the skill produces on its own.
-        ``DifficultyAttributes.aim`` is the same value except for TD, RX, and
-        AP, where the attribute is adjusted (or zeroed) afterwards.
-        """
-    @property
-    def precision(self) -> PrecisionSkill:
-        """The ``Precision`` skill."""
-    @property
-    def flow(self) -> FlowSkill:
-        """The ``FlowAim`` skill."""
     @property
     def jump(self) -> JumpSkill:
         """The ``JumpAim`` skill."""
     @property
+    def flow(self) -> FlowSkill:
+        """The ``FlowAim`` skill."""
+    @property
     def raw_aim(self) -> RawAimSkill:
         """The ``RawAim`` skill."""
+    @property
+    def precision(self) -> PrecisionSkill:
+        """The ``Precision`` skill."""
+    @property
+    def stamina(self) -> StaminaSkill:
+        """The ``Stamina`` skill."""
     @property
     def rhythm_complexity(self) -> RhythmComplexity:
         """The ``RhythmComplexity`` skill."""
@@ -404,12 +423,14 @@ class Difficulty:
         Prefer this over the individual getters when you need more than one
         skill, since each getter runs its own calculation.
         """
-    def flow(self, map: Beatmap) -> FlowSkill:
-        """Calculate ``FlowAim``."""
     def jump(self, map: Beatmap) -> JumpSkill:
         """Calculate ``JumpAim``."""
+    def flow(self, map: Beatmap) -> FlowSkill:
+        """Calculate ``FlowAim``."""
     def raw_aim(self, map: Beatmap) -> RawAimSkill:
         """Calculate ``RawAim``."""
+    def stamina(self, map: Beatmap) -> StaminaSkill:
+        """Calculate ``Stamina``."""
     def rhythm_complexity(self, map: Beatmap) -> RhythmComplexity:
         """Calculate ``RhythmComplexity``."""
     def performance(

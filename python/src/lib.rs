@@ -2,7 +2,7 @@
 //!
 //! `rosu-ppplus-csr` is a fork of `rosu-pp` that adds the ppplus-csr
 //! calculation modules. This crate exposes them to Python, most notably the
-//! separated `FlowAim` / `JumpAim` skills and `RhythmComplexity`.
+//! separated `JumpAim` / `FlowAim` skills, `Stamina`, and `RhythmComplexity`.
 
 use pyo3::{
     prelude::PyModuleMethods, pyfunction, pymodule, types::PyModule, wrap_pyfunction, Bound,
@@ -28,6 +28,7 @@ use self::{
     mode::PyGameMode,
     output::{
         PyFlowSkill, PyJumpSkill, PyPrecisionSkill, PyRawAimSkill, PyRhythmComplexity, PySkills,
+        PyStaminaSkill,
     },
 };
 
@@ -47,10 +48,11 @@ fn rosu_ppplus(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
 
     // ppplus-csr specific classes
     m.add_class::<PySkills>()?;
-    m.add_class::<PyFlowSkill>()?;
     m.add_class::<PyJumpSkill>()?;
+    m.add_class::<PyFlowSkill>()?;
     m.add_class::<PyRawAimSkill>()?;
     m.add_class::<PyPrecisionSkill>()?;
+    m.add_class::<PyStaminaSkill>()?;
     m.add_class::<PyRhythmComplexity>()?;
 
     m.add_class::<PyGameMode>()?;
